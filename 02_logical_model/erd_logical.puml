@@ -1,0 +1,142 @@
+@startuml ERD_Logical
+!theme plain
+hide circle
+skinparam linetype ortho
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+skinparam defaultFontName Arial
+
+entity "Hotel\n(Отель)" as hotel {
+  * hotel_id : UUID <<PK>>
+  --
+  name : VARCHAR(255)
+  city : VARCHAR(100)
+  address : VARCHAR(255)
+  status : VARCHAR(20)
+  created_at : TIMESTAMP
+}
+
+entity "RoomCategory\n(Категория номера)" as room_category {
+  * category_id : UUID <<PK>>
+  --
+  * hotel_id : UUID <<FK>>
+  name : VARCHAR(100)
+  capacity : INT
+  description : TEXT
+}
+
+entity "Quota\n(Квота)" as quota {
+  * quota_id : UUID <<PK>>
+  --
+  * category_id : UUID <<FK>>
+  date : DATE
+  total : INT
+  sold : INT
+  available : INT
+  updated_at : TIMESTAMP
+}
+
+entity "RatePlan\n(Тарифный план)" as rate_plan {
+  * rate_plan_id : UUID <<PK>>
+  --
+  * category_id : UUID <<FK>>
+  name : VARCHAR(100)
+  meal_plan : VARCHAR(50)
+  cancellation_policy : TEXT
+  valid_from : DATE
+  valid_to : DATE
+}
+
+entity "Price\n(Цена)" as price {
+  * price_id : UUID <<PK>>
+  --
+  * rate_plan_id : UUID <<FK>>
+  date : DATE
+  amount : DECIMAL(10,2)
+  currency : VARCHAR(3)
+}
+
+entity "SalesChannel\n(Канал продаж)" as channel {
+  * channel_id : UUID <<PK>>
+  --
+  name : VARCHAR(100)
+  type : VARCHAR(50)
+  is_active : BOOLEAN
+}
+
+entity "Publication\n(Публикация)" as publication {
+  * publication_id : UUID <<PK>>
+  --
+  * channel_id : UUID <<FK>>
+  * quota_id : UUID <<FK>>
+  published_at : TIMESTAMP
+  status : VARCHAR(20)
+  error_message : TEXT
+}
+
+entity "StopSale\n(Ограничение продаж)" as stop_sale {
+  * stop_sale_id : UUID <<PK>>
+  --
+  * category_id : UUID <<FK>>
+  start_date : DATE
+  end_date : DATE
+  reason : TEXT
+  created_by : UUID <<FK>>
+}
+
+entity "QuotaChange\n(История изменений)" as quota_change {
+  * change_id : UUID <<PK>>
+  --
+  * quota_id : UUID <<FK>>
+  * user_id : UUID <<FK>>
+  old_value : INT
+  new_value : INT
+  changed_at : TIMESTAMP
+  comment : TEXT
+}
+
+entity "User\n(Пользователь)" as user {
+  * user_id : UUID <<PK>>
+  --
+  email : VARCHAR(255)
+  full_name : VARCHAR(255)
+  role_id : UUID <<FK>>
+  is_active : BOOLEAN
+}
+
+entity "Role\n(Роль)" as role {
+  * role_id : UUID <<PK>>
+  --
+  name : VARCHAR(50)
+  description : TEXT
+}
+
+entity "OverbookingIncident\n(Инцидент овербукинга)" as incident {
+  * incident_id : UUID <<PK>>
+  --
+  * category_id : UUID <<FK>>
+  date : DATE
+  sold_count : INT
+  quota_count : INT
+  resolved_at : TIMESTAMP
+  resolution : TEXT
+}
+
+' Связи (Relationships)
+hotel ||--o{ room_category : "1:N"
+room_category ||--o{ quota : "1:N"
+room_category ||--o{ rate_plan : "1:N"
+rate_plan ||--o{ price : "1:N"
+quota ||--o{ publication : "1:N"
+channel ||--o{ publication : "1:N"
+room_category ||--o{ stop_sale : "1:N"
+quota ||--o{ quota_change : "1:N"
+user ||--o{ quota_change : "1:N"
+role ||--o{ user : "1:N"
+room_category ||--o{ incident : "1:N"
+user ||--o{ stop_sale : "создает"
+
+@enduml
